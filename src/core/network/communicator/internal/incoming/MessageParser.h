@@ -16,6 +16,9 @@
 #include "../../../messages/trust_lines/ConflictResolverMessage.h"
 #include "../../../messages/trust_lines/ConflictResolverResponseMessage.h"
 
+#include "../../../messages/trust_lines/EthereumAuditMessage.h"
+#include "../../../messages/trust_lines/EthereumAuditResponseMessage.h"
+
 #include "../../../messages/max_flow_calculation/InitiateMaxFlowCalculationMessage.h"
 #include "../../../messages/max_flow_calculation/MaxFlowCalculationSourceFstLevelMessage.h"
 #include "../../../messages/max_flow_calculation/MaxFlowCalculationTargetFstLevelMessage.h"
@@ -45,6 +48,7 @@
 #include "../../../messages/payments/ParticipantsPublicKeysMessage.h"
 #include "../../../messages/payments/ParticipantVoteMessage.h"
 #include "../../../messages/payments/TransactionPublicKeyHashMessage.h"
+#include "../../../messages/payments/EthereumOutgoingReceiptMessage.h"
 
 #include "../../../messages/cycles/ThreeNodes/CyclesThreeNodesBalancesRequestMessage.h"
 #include "../../../messages/cycles/ThreeNodes/CyclesThreeNodesBalancesResponseMessage.h"

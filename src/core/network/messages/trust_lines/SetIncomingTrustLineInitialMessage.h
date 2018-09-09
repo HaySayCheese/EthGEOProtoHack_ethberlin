@@ -15,7 +15,8 @@ public:
         const TransactionUUID &transactionUUID,
         const NodeUUID &destinationMessage,
         const TrustLineAmount &amount,
-        bool isContractorGateway)
+        bool isContractorGateway,
+        const string ethereumAddress)
     noexcept;
 
     SetIncomingTrustLineInitialMessage(

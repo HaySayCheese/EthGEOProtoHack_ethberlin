@@ -60,6 +60,10 @@ public:
         ConflictResolverInitiatorTransactionType = 110,
         ConflictResolverContractorTransactionType = 111,
 
+        EthereumAuditTransactionType = 112,
+        EthereumAuditTargetTransactionType = 113,
+        EthereumCloseChannelTransactionType = 114,
+
         // Cycles
         Cycles_ThreeNodesInitTransaction = 200,
         Cycles_ThreeNodesReceiverTransaction = 201,
@@ -77,6 +81,8 @@ public:
         VoutesStatusResponsePaymentTransaction = 304,
         Payments_CycleCloserInitiatorTransaction = 305,
         Payments_CycleCloserIntermediateNodeTransaction = 306,
+        Payments_EthereumPaymentReceiptProcessing = 307,
+        Payments_EthereumSendPaymentReceipts = 308,
 
         // Max flow calculation
         CollectTopologyTransactionType = 401,

@@ -139,6 +139,7 @@ protected:
 
     NodeUUID mNodeUUID;
     as::io_service mIOService;
+    string mEthereumAddress;
 
     unique_ptr<Logger> mLog;
     unique_ptr<Settings> mSettings;

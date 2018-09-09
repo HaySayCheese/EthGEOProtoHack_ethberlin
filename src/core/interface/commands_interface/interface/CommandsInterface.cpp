@@ -147,6 +147,16 @@ pair<bool, BaseUserCommand::Shared> CommandsParser::tryParseCommand(
                 uuid,
                 buffer);
 
+        } else if (identifier == EthereumAuditCommand::identifier()) {
+            command = new EthereumAuditCommand(
+                uuid,
+                buffer);
+
+        } else if (identifier == EthereumCloseChannelCommand::identifier()) {
+            command = new EthereumCloseChannelCommand(
+                uuid,
+                buffer);
+
         } else if (identifier == CreditUsageCommand::identifier()) {
             command = new CreditUsageCommand(
                 uuid,

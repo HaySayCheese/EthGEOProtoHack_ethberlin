@@ -37,6 +37,9 @@ public:
     vector<SerializedEquivalent> iAmGateway(
         const json *conf = nullptr) const;
 
+    const string ethereum(
+        const json *conf = nullptr) const;
+
     json loadParsedJSON() const;
 };
 

@@ -39,10 +39,14 @@ public:
     const SerializedEquivalent equivalent() const
         noexcept;
 
+    const bool isStateChannel() const
+        noexcept;
+
 private:
     NodeUUID mContractorUUID;
     TrustLineAmount mAmount;
     SerializedEquivalent mEquivalent;
+    bool mStateChannel;
 };
 
 

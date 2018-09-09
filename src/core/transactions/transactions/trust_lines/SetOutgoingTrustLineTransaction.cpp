@@ -3,6 +3,7 @@
 
 SetOutgoingTrustLineTransaction::SetOutgoingTrustLineTransaction(
     const NodeUUID &nodeUUID,
+    const string ethereumAddress,
     SetOutgoingTrustLineCommand::Shared command,
     TrustLinesManager *manager,
     StorageHandler *storageHandler,
@@ -27,6 +28,7 @@ SetOutgoingTrustLineTransaction::SetOutgoingTrustLineTransaction(
         logger),
     mCommand(command),
     mAmount(mCommand->amount()),
+    mEthereumAddress(ethereumAddress),
     mTopologyCacheManager(topologyCacheManager),
     mMaxFlowCacheManager(maxFlowCacheManager),
     mSubsystemsController(subsystemsController),
@@ -134,6 +136,9 @@ TransactionResult::SharedConst SetOutgoingTrustLineTransaction::run()
         }
         case Stages::Recovery: {
             return runRecoveryStage();
+        }
+        case ChannelOpeningPending: {
+            return runChannelOpeningPending();
         }
         default:
             throw ValueError(logHeader() + "::run: "
@@ -296,13 +301,25 @@ TransactionResult::SharedConst SetOutgoingTrustLineTransaction::runInitializatio
     // Notifying remote node about trust line state changed.
     // Network communicator knows, that this message must be forced to be delivered,
     // so the TA itself might finish without any response from the remote node.
-    sendMessage<SetIncomingTrustLineMessage>(
-        mContractorUUID,
-        mEquivalent,
-        mNodeUUID,
-        mTransactionUUID,
-        mContractorUUID,
-        mAmount);
+    if (mTrustLines->isStateChannel(mContractorUUID)) {
+        sendMessage<SetIncomingTrustLineMessage>(
+            mContractorUUID,
+            mEquivalent,
+            mNodeUUID,
+            mTransactionUUID,
+            mContractorUUID,
+            mAmount,
+            "");
+    } else {
+        sendMessage<SetIncomingTrustLineMessage>(
+            mContractorUUID,
+            mEquivalent,
+            mNodeUUID,
+            mTransactionUUID,
+            mContractorUUID,
+            mAmount,
+            "");
+    }
 
     mStep = TrustLineResponseProcessing;
     return resultOK();
@@ -382,6 +399,31 @@ TransactionResult::SharedConst SetOutgoingTrustLineTransaction::runResponseProce
         throw e;
     }
 
+    if (mTrustLines->isStateChannel(mContractorUUID)) {
+        info() << "Contractor ethereum address " << mTrustLines->contractorEthereumAddress(mContractorUUID);
+        info() << "Check channel opening";
+        auto channel = make_shared<eth::Channel>(
+                mTrustLines->ethereumChannelId(mContractorUUID),
+                mTrustLines->contractorEthereumAddress(mContractorUUID));
+        auto channelInfo = eth::api::channelInfo(channel);
+
+        if (!channelInfo.second) {
+            warning() << "Can't get channel info";
+            mStep = ChannelOpeningPending;
+            return resultAwakeAfterMilliseconds(5000);
+        }
+        if (channelInfo.first->state == 1) {
+            info() << "Channel opened but not deposed";
+            mStep = ChannelOpeningPending;
+            return resultAwakeAfterMilliseconds(5000);
+        }
+        if (channelInfo.first->bobBalance != mAmount) {
+            warning() << "Contractor deposed channel wrongly";
+            return resultDone();
+        }
+        info() << "Channel  was opened";
+    }
+
     mStep = AuditInitialization;
     return resultAwakeAsFastAsPossible();
 }
@@ -431,6 +473,33 @@ TransactionResult::SharedConst SetOutgoingTrustLineTransaction::runRecoveryStage
     warning() << "Invalid TL state for this TA: "
               << mTrustLines->trustLineState(mContractorUUID);
     return resultDone();
+}
+
+TransactionResult::SharedConst SetOutgoingTrustLineTransaction::runChannelOpeningPending()
+{
+    info() << "runChannelOpeningPending";
+    auto channel = make_shared<eth::Channel>(
+            mTrustLines->ethereumChannelId(mContractorUUID),
+            mTrustLines->contractorEthereumAddress(mContractorUUID));
+    auto channelInfo = eth::api::channelInfo(channel);
+
+    if (!channelInfo.second) {
+        warning() << "Can't get channel info";
+        mStep = ChannelOpeningPending;
+        return resultAwakeAfterMilliseconds(5000);
+    }
+    if (channelInfo.first->state == 1) {
+        info() << "Channel opened but not deposed";
+        mStep = ChannelOpeningPending;
+        return resultAwakeAfterMilliseconds(5000);
+    }
+    if (channelInfo.first->bobBalance != mAmount) {
+        warning() << "Contractor deposed channel wrongly";
+        return resultDone();
+    }
+    info() << "Channel  was opened";
+    mStep = AuditInitialization;
+    return resultAwakeAsFastAsPossible();
 }
 
 TransactionResult::SharedConst SetOutgoingTrustLineTransaction::resultOK()

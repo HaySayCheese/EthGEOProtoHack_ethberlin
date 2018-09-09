@@ -84,6 +84,14 @@ EquivalentsSubsystemsRouter::EquivalentsSubsystemsRouter(
                     mTopologyTrustLinesManagers[equivalent].get(),
                     mLogger)));
         info() << "Paths Manager is successfully initialized";
+
+        mEthereumSignaturesManagers.insert(
+            make_pair(
+                equivalent,
+                make_unique<EthereumSiganturesManager>(
+                    equivalent,
+                    mLogger)));
+        info() << "Ethereum Signatures Manager is successfully initialized";
     }
 
     mGatewayNotificationAndRoutingTablesDelayedTask = make_unique<GatewayNotificationAndRoutingTablesDelayedTask>(
@@ -165,6 +173,17 @@ PathsManager* EquivalentsSubsystemsRouter::pathsManager(
     return mPathsManagers.at(equivalent).get();
 }
 
+EthereumSiganturesManager* EquivalentsSubsystemsRouter::ethereumSiganturesManager(
+    const SerializedEquivalent equivalent)
+{
+    if (mEthereumSignaturesManagers.count(equivalent) == 0) {
+        throw NotFoundError(
+                "EquivalentsSubsystemsRouter::ethereumSiganturesManager: "
+                "wrong equivalent " + to_string(equivalent));
+    }
+    return mEthereumSignaturesManagers.at(equivalent).get();
+}
+
 void EquivalentsSubsystemsRouter::initNewEquivalent(
     const SerializedEquivalent equivalent)
 {
@@ -236,6 +255,14 @@ void EquivalentsSubsystemsRouter::initNewEquivalent(
                  mTopologyTrustLinesManagers[equivalent].get(),
                  mLogger)));
     info() << "Paths Manager is successfully initialized";
+
+    mEthereumSignaturesManagers.insert(
+        make_pair(
+            equivalent,
+            make_unique<EthereumSiganturesManager>(
+                equivalent,
+                mLogger)));
+    info() << "Ethereum Signatures Manager is successfully initialized";
 
     mEquivalents.push_back(equivalent);
 }

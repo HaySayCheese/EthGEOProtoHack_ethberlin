@@ -13,4 +13,5 @@ target_link_libraries(equivalents
         topology
         cycles
         paths
-        delayed_tasks)
+        delayed_tasks
+        ethereum_components)

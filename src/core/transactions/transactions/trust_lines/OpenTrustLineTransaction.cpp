@@ -2,6 +2,7 @@
 
 OpenTrustLineTransaction::OpenTrustLineTransaction(
     const NodeUUID &nodeUUID,
+    const string &ethereumAddress,
     SetOutgoingTrustLineCommand::Shared command,
     TrustLinesManager *manager,
     StorageHandler *storageHandler,
@@ -24,7 +25,8 @@ OpenTrustLineTransaction::OpenTrustLineTransaction(
         logger),
     mCommand(command),
     mSubsystemsController(subsystemsController),
-    mIAmGateway(iAmGateway)
+    mIAmGateway(iAmGateway),
+    mEthereumAddress(ethereumAddress)
 {
     mAmount = command->amount();
     mAuditNumber = TrustLine::kInitialAuditNumber;
@@ -120,6 +122,9 @@ TransactionResult::SharedConst OpenTrustLineTransaction::run()
         case Stages::Recovery: {
             return runRecoveryStage();
         }
+        case ChannelOpeningPending: {
+            return runChannelOpeningPending();
+        }
         default:
             throw ValueError(logHeader() + "::run: "
                 "wrong value of mStep");
@@ -145,6 +150,13 @@ TransactionResult::SharedConst OpenTrustLineTransaction::runInitializationStage(
     }
     if (mAmount == 0) {
         warning() << "Can't establish trust line with zero amount.";
+        return resultProtocolError();
+    }
+
+    info() << "State channel " << mCommand->isStateChannel();
+
+    if (mCommand->isStateChannel() and mEthereumAddress.empty()) {
+        warning() << "Can't work with state channel.";
         return resultProtocolError();
     }
 
@@ -181,14 +193,29 @@ TransactionResult::SharedConst OpenTrustLineTransaction::runInitializationStage(
     // Notifying remote node about trust line state changed.
     // Network communicator knows, that this message must be forced to be delivered,
     // so the TA itself might finish without any response from the remote node.
-    sendMessage<SetIncomingTrustLineInitialMessage>(
-        mContractorUUID,
-        mEquivalent,
-        mNodeUUID,
-        mTransactionUUID,
-        mContractorUUID,
-        mAmount,
-        mIAmGateway);
+    if (mCommand->isStateChannel()) {
+        sendMessage<SetIncomingTrustLineInitialMessage>(
+            mContractorUUID,
+            mEquivalent,
+            mNodeUUID,
+            mTransactionUUID,
+            mContractorUUID,
+            mAmount,
+            mIAmGateway,
+            mEthereumAddress);
+    } else {
+        sendMessage<SetIncomingTrustLineInitialMessage>(
+            mContractorUUID,
+            mEquivalent,
+            mNodeUUID,
+            mTransactionUUID,
+            mContractorUUID,
+            mAmount,
+            mIAmGateway,
+            "");
+    }
+
+    mTrustLines->setAlice(mContractorUUID);
 
     mStep = TrustLineResponseProcessing;
     return resultOK();
@@ -224,6 +251,12 @@ TransactionResult::SharedConst OpenTrustLineTransaction::runResponseProcessingSt
         return resultDone();
     }
 
+    if (mCommand->isStateChannel() and message->ethereumAddress().empty()) {
+        warning() << "Contractor don't send ethereum address";
+        processConfirmationMessage(message);
+        return resultDone();
+    }
+
 #ifdef TESTS
     mTrustLinesInfluenceController->testThrowExceptionOnTLProcessingResponseStage();
     mTrustLinesInfluenceController->testTerminateProcessOnTLProcessingResponseStage();
@@ -251,6 +284,39 @@ TransactionResult::SharedConst OpenTrustLineTransaction::runResponseProcessingSt
     }
 
     processConfirmationMessage(message);
+
+    if (mCommand->isStateChannel()) {
+        info() << "Contractor ethereum address " << message->ethereumAddress();
+        mTrustLines->setContractorEthereumAddress(
+            mContractorUUID,
+            message->ethereumAddress());
+        mTrustLines->setEthereumChannelId(
+            mContractorUUID,
+            message->ethereumChannelId());
+        info() << "Check channel opening";
+
+        auto channel = make_shared<eth::Channel>(
+            mTrustLines->ethereumChannelId(mContractorUUID),
+            mTrustLines->contractorEthereumAddress(mContractorUUID));
+        auto channelInfo = eth::api::channelInfo(channel);
+
+        if (!channelInfo.second) {
+            warning() << "Can't get channel info";
+            mStep = ChannelOpeningPending;
+            return resultAwakeAfterMilliseconds(5000);
+        }
+        if (channelInfo.first->state == 0) {
+            info() << "Channel opened but not deposed";
+            mStep = ChannelOpeningPending;
+            return resultAwakeAfterMilliseconds(5000);
+        }
+        if (channelInfo.first->aliceBalance != mAmount) {
+            warning() << "Contractor deposed channel wrongly";
+            return resultDone();
+        }
+        info() << "Channel  was opened";
+    }
+
     mStep = KeysSharingInitialization;
     return resultAwakeAsFastAsPossible();
 }
@@ -322,6 +388,33 @@ TransactionResult::SharedConst OpenTrustLineTransaction::runReceiveNextKeyStage(
     mCurrentPublicKey = message->publicKey();
     mCurrentKeyNumber = message->number();
     return runPublicKeyReceiverStage();
+}
+
+TransactionResult::SharedConst OpenTrustLineTransaction::runChannelOpeningPending()
+{
+    info() << "runChannelOpeningPending";
+    auto channel = make_shared<eth::Channel>(
+        mTrustLines->ethereumChannelId(mContractorUUID),
+        mTrustLines->contractorEthereumAddress(mContractorUUID));
+    auto channelInfo = eth::api::channelInfo(channel);
+
+    if (!channelInfo.second) {
+        warning() << "Can't get channel info";
+        mStep = ChannelOpeningPending;
+        return resultAwakeAfterMilliseconds(5000);
+    }
+    if (channelInfo.first->state == 0) {
+        info() << "Channel opened but not deposed";
+        mStep = ChannelOpeningPending;
+        return resultAwakeAfterMilliseconds(5000);
+    }
+    if (channelInfo.first->aliceBalance != mAmount) {
+        warning() << "Contractor deposed channel wrongly";
+        return resultDone();
+    }
+    info() << "Channel was opened";
+    mStep = KeysSharingInitialization;
+    return resultAwakeAsFastAsPossible();
 }
 
 TransactionResult::SharedConst OpenTrustLineTransaction::resultOK()

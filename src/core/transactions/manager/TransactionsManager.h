@@ -67,6 +67,10 @@
 #include "../transactions/trust_lines/ConflictResolverInitiatorTransaction.h"
 #include "../transactions/trust_lines/ConflictResolverContractorTransaction.h"
 
+#include "../transactions/trust_lines/EthereumAuditTransaction.h"
+#include "../transactions/trust_lines/EthereumAuditTargetTransaction.h"
+#include "../transactions/trust_lines/EthereumCloseChannelTransaction.h"
+
 #include "../transactions/cycles/ThreeNodes/CyclesThreeNodesInitTransaction.h"
 #include "../transactions/cycles/ThreeNodes/CyclesThreeNodesReceiverTransaction.h"
 #include "../transactions/cycles/FourNodes/CyclesFourNodesInitTransaction.h"
@@ -82,7 +86,8 @@
 #include "../transactions/regular/payments/VotesStatusResponsePaymentTransaction.h"
 #include "../transactions/regular/payments/CycleCloserInitiatorTransaction.h"
 #include "../transactions/regular/payments/CycleCloserIntermediateNodeTransaction.h"
-
+#include "../transactions/regular/payments/EthereumPaymentReceiptProcessingTransaction.h"
+#include "../transactions/regular/payments/EthereumSendPaymentReceiptsTransaction.h"
 
 #include "../transactions/max_flow_calculation/InitiateMaxFlowCalculationTransaction.h"
 #include "../transactions/max_flow_calculation/MaxFlowCalculationFullyTransaction.h"
@@ -142,6 +147,7 @@ public:
 public:
     TransactionsManager(
         NodeUUID &nodeUUID,
+        string ethereumAddress,
         as::io_service &IOService,
         EquivalentsSubsystemsRouter *equivalentsSubsystemsRouter,
         ResourcesManager *ResourcesManager,
@@ -192,6 +198,12 @@ protected: // Transactions
     void launchCloseIncomingTrustLineTransaction(
         CloseIncomingTrustLineCommand::Shared command);
 
+    void launchEthereumAuditTransaction(
+        EthereumAuditCommand::Shared command);
+
+    void launchEthereumCloseChannelTransaction(
+        EthereumCloseChannelCommand::Shared command);
+
     /**
      * Starts transaction that would processes received message
      * and attempts to set incoming trust line from the remote node.
@@ -213,6 +225,9 @@ protected: // Transactions
 
     void launchConflictResolveContractorTransaction(
         ConflictResolverMessage::Shared message);
+
+    void launchEthereumAuditTargetTransaction(
+        EthereumAuditMessage::Shared message);
 
     /*
      * Max flow transactions
@@ -261,6 +276,13 @@ protected: // Transactions
 
     void launchVotesResponsePaymentsTransaction(
         VotesStatusRequestMessage::Shared message);
+
+    void launchEthereumPaymentReceiptProcessingTransaction(
+        EthereumOutgoingReceiptMessage::Shared message);
+
+    void launchEthereumSendPaymentReceiptsTransaction(
+        map<NodeUUID, TrustLineAmount> outgoingReceipts,
+        const SerializedEquivalent equivalent);
 
     /*
      * Cycles building Transactions
@@ -409,6 +431,9 @@ protected:
     void subscribeForPublicKeysSharingSignal(
         BasePaymentTransaction::PublicKeysSharingSignal &signal);
 
+    void subscribeForSendEthereumReceiptsSignal(
+        BasePaymentTransaction::EthereumOutgoingReceiptsSignal &signal);
+
     // Slots
     void onSubsidiaryTransactionReady(
         BaseTransaction::Shared transaction);
@@ -487,6 +512,7 @@ protected:
 
 private:
     NodeUUID &mNodeUUID;
+    string mEthereumAddress;
     as::io_service &mIOService;
     EquivalentsSubsystemsRouter *mEquivalentsSubsystemsRouter;
     ResourcesManager *mResourcesManager;

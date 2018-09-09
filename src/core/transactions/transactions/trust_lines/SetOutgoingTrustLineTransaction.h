@@ -11,6 +11,8 @@
 #include "../../../interface/visual_interface/interface/VisualInterface.h"
 #include "../../../interface/visual_interface/visual/VisualResult.h"
 
+#include "../../../ethereum/connector.h"
+
 
 /**
  * This transaction is used to create/update/close the outgoing trust line for the remote contractor.
@@ -33,6 +35,7 @@ public:
 public:
     SetOutgoingTrustLineTransaction(
         const NodeUUID &nodeUUID,
+        const string ethereumAddress,
         SetOutgoingTrustLineCommand::Shared command,
         TrustLinesManager *manager,
         StorageHandler *storageHandler,
@@ -81,11 +84,14 @@ private:
 
     TransactionResult::SharedConst runRecoveryStage();
 
+    TransactionResult::SharedConst runChannelOpeningPending();
+
     pair<BytesShared, size_t> serializeToBytes() const override;
 
 protected:
     SetOutgoingTrustLineCommand::Shared mCommand;
     TrustLineAmount mAmount;
+    string mEthereumAddress;
     TopologyCacheManager *mTopologyCacheManager;
     MaxFlowCacheManager *mMaxFlowCacheManager;
     SubsystemsController *mSubsystemsController;

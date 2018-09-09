@@ -5,6 +5,8 @@
 #include "../../../network/messages/trust_lines/SetIncomingTrustLineInitialMessage.h"
 #include "../../../subsystems_controller/SubsystemsController.h"
 
+#include "../../../ethereum/connector.h"
+
 class AcceptTrustLineTransaction : public BaseTrustLineTransaction {
 
 public:
@@ -13,6 +15,7 @@ public:
 public:
     AcceptTrustLineTransaction(
         const NodeUUID &nodeUUID,
+        const string &ethereumAddress,
         SetIncomingTrustLineInitialMessage::Shared message,
         TrustLinesManager *manager,
         StorageHandler *storageHandler,
@@ -59,6 +62,9 @@ protected:
     SubsystemsController *mSubsystemsController;
     bool mIAmGateway;
     bool mSenderIsGateway;
+    string mEthereumAddress;
+    string mContractorEthereumAddress;
+    string mEthereumChannelId;
 };
 
 

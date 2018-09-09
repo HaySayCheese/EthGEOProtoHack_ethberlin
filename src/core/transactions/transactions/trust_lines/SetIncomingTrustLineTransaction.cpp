@@ -3,6 +3,7 @@
 
 SetIncomingTrustLineTransaction::SetIncomingTrustLineTransaction(
     const NodeUUID &nodeUUID,
+    const string ethereumAddress,
     SetIncomingTrustLineMessage::Shared message,
     TrustLinesManager *manager,
     StorageHandler *storageHandler,
@@ -28,6 +29,7 @@ SetIncomingTrustLineTransaction::SetIncomingTrustLineTransaction(
         trustLinesInfluenceController,
         logger),
     mAmount(message->amount()),
+    mEthereumAddress(ethereumAddress),
     mTopologyTrustLinesManager(topologyTrustLinesManager),
     mTopologyCacheManager(topologyCacheManager),
     mMaxFlowCacheManager(maxFlowCacheManager),
@@ -204,6 +206,15 @@ TransactionResult::SharedConst SetIncomingTrustLineTransaction::runInitializatio
                    << " has not been changed.";
             break;
         }
+        }
+
+        if (mTrustLines->isStateChannel(mContractorUUID)) {
+            info() << "state channel mContractorEthereumAddress: "
+            << mTrustLines->contractorEthereumAddress(mContractorUUID);
+
+            // todo [hackathon] create channel and depose on amount
+            // current ethereumAddress: mEthereumAddress
+            // contractorEthereumAddress: mContractorEthereumAddress
         }
 
         auto bytesAndCount = serializeToBytes();

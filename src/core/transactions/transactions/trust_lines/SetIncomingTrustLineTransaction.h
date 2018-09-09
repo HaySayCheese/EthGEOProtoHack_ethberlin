@@ -33,6 +33,7 @@ public:
 public:
     SetIncomingTrustLineTransaction(
         const NodeUUID &nodeUUID,
+        const string ethereumAddress,
         SetIncomingTrustLineMessage::Shared message,
         TrustLinesManager *manager,
         StorageHandler *storageHandler,
@@ -76,6 +77,7 @@ private:
 
 protected:
     TrustLineAmount mAmount;
+    string mEthereumAddress;
     TopologyTrustLinesManager *mTopologyTrustLinesManager;
     TopologyCacheManager *mTopologyCacheManager;
     MaxFlowCacheManager *mMaxFlowCacheManager;

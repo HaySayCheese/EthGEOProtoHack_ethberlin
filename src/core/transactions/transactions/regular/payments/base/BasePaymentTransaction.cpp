@@ -492,6 +492,15 @@ TransactionResult::SharedConst BasePaymentTransaction::reject(
 TransactionResult::SharedConst BasePaymentTransaction::approve()
 {
     debug() << "Transaction approved. Committing.";
+
+    for (const auto &kNodeUUIDAndReservations : mReservations) {
+        mOutgoingReceipts.insert(
+            make_pair(
+                kNodeUUIDAndReservations.first,
+                totalReservedOutgoingAmountToNode(
+                    kNodeUUIDAndReservations.first)));
+    }
+
     auto ioTransaction = mStorageHandler->beginTransaction();
     commit(ioTransaction);
     savePaymentOperationIntoHistory(ioTransaction);
@@ -517,6 +526,12 @@ void BasePaymentTransaction::commit(
                 debug() << "Committed reservation: [ <= ] " << kPathIDAndReservation.second->amount()
                         << " for (" << kNodeUUIDAndReservations.first << ") [" << kPathIDAndReservation.first
                         << "]";
+                if (mTrustLines->isStateChannel(kNodeUUIDAndReservations.first)) {
+                    mTrustLines->setTrustLineState(
+                        kNodeUUIDAndReservations.first,
+                        TrustLine::EthereumPending);
+                    info() << "Ethereum pending with " << kNodeUUIDAndReservations.first;
+                }
             }
 
             reservationDirection = kPathIDAndReservation.second->direction();
@@ -1068,6 +1083,21 @@ const TrustLineAmount BasePaymentTransaction::totalReservedIncomingAmountToNode(
     }
     for (const auto &pathIDAndReservation : mReservations[nodeUUID]) {
         if (pathIDAndReservation.second->direction() == AmountReservation::Incoming) {
+            result += pathIDAndReservation.second->amount();
+        }
+    }
+    return result;
+}
+
+const TrustLineAmount BasePaymentTransaction::totalReservedOutgoingAmountToNode(
+    const NodeUUID &nodeUUID)
+{
+    auto result = TrustLine::kZeroAmount();
+    if (mReservations.find(nodeUUID) == mReservations.end()) {
+        return result;
+    }
+    for (const auto &pathIDAndReservation : mReservations[nodeUUID]) {
+        if (pathIDAndReservation.second->direction() == AmountReservation::Outgoing) {
             result += pathIDAndReservation.second->amount();
         }
     }

@@ -70,6 +70,10 @@ public:
                 const NodeUUID&,
                 const SerializedEquivalent)>
             PublicKeysSharingSignal;
+    typedef signals::signal<void(
+                map<NodeUUID, TrustLineAmount>,
+                const SerializedEquivalent)>
+            EthereumOutgoingReceiptsSignal;
 
 public:
     BasePaymentTransaction(
@@ -388,6 +392,9 @@ protected:
     const TrustLineAmount totalReservedIncomingAmountToNode(
         const NodeUUID &nodeUUID);
 
+    const TrustLineAmount totalReservedOutgoingAmountToNode(
+        const NodeUUID &nodeUUID);
+
     bool checkPublicKeysAppropriate();
 
     pair<BytesShared, size_t> getSerializedParticipantsVotesData(
@@ -425,6 +432,8 @@ public:
 
     // signal for generating and sharing public keys
     mutable PublicKeysSharingSignal mPublicKeysSharingSignal;
+
+    mutable EthereumOutgoingReceiptsSignal mEthereumOutgoingReceiptSignal;
 
 protected:
     TrustLinesManager *mTrustLines;
@@ -468,6 +477,8 @@ protected:
     bool mAllNeighborsSentFinalReservations;
 
     lamport::PublicKey::Shared mPublicKey;
+
+    map<NodeUUID, TrustLineAmount> mOutgoingReceipts;
 
 protected:
     SubsystemsController *mSubsystemsController;

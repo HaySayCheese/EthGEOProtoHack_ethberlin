@@ -17,7 +17,8 @@ public:
         const NodeUUID &sender,
         const TransactionUUID &transactionUUID,
         const NodeUUID &destinationMessage,
-        const TrustLineAmount &amount)
+        const TrustLineAmount &amount,
+        const string ethereumAddress)
         noexcept;
 
     SetIncomingTrustLineMessage(
@@ -30,6 +31,8 @@ public:
     const TrustLineAmount& amount() const
         noexcept;
 
+    const string ethereumAddress() const;
+
     const bool isAddToConfirmationRequiredMessagesHandler() const override;
 
     const bool isCheckCachedResponse() const override;
@@ -37,7 +40,12 @@ public:
     virtual pair<BytesShared, size_t> serializeToBytes() const;
 
 protected:
+    const size_t kOffsetToInheritedBytes() const
+    noexcept;
+
+protected:
     TrustLineAmount mAmount;
+    string mEthereumAddress;
 };
 
 

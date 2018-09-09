@@ -36,6 +36,9 @@ public:
         TrustLines_ConflictResolver = 109,
         TrustLines_ConflictResolverConfirmation = 110,
 
+        TrustLines_EthereumAudit = 111,
+        TrustLines_EthereumAuditResponse = 112,
+
         /*
          * Payments messages
          */
@@ -66,6 +69,8 @@ public:
         Payments_ParticipantsVotes = 220,
 
         Payments_VotesStatusRequest = 221,
+
+        Payments_EthereumReceipt = 222,
 
         /*
          * Cycles

@@ -9,6 +9,8 @@
 #include "../paths/PathsManager.h"
 #include "../delayed_tasks/GatewayNotificationAndRoutingTablesDelayedTask.h"
 
+#include "../ethereum/EthereumSiganturesManager.h"
+
 #include <map>
 
 namespace as = boost::asio;
@@ -46,6 +48,9 @@ public:
 
     PathsManager* pathsManager(
         const SerializedEquivalent equivalent) const;
+
+    EthereumSiganturesManager* ethereumSiganturesManager(
+        const SerializedEquivalent equivalent);
 
     void initNewEquivalent(
         const SerializedEquivalent equivalent);
@@ -88,6 +93,8 @@ private:
     map<SerializedEquivalent, unique_ptr<MaxFlowCacheManager>> mMaxFlowCacheManagers;
     map<SerializedEquivalent, unique_ptr<PathsManager>> mPathsManagers;
     unique_ptr<GatewayNotificationAndRoutingTablesDelayedTask> mGatewayNotificationAndRoutingTablesDelayedTask;
+
+    map<SerializedEquivalent, unique_ptr<EthereumSiganturesManager>> mEthereumSignaturesManagers;
 };
 
 

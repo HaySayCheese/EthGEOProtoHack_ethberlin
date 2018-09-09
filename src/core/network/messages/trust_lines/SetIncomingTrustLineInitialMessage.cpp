@@ -6,7 +6,8 @@ SetIncomingTrustLineInitialMessage::SetIncomingTrustLineInitialMessage(
     const TransactionUUID &transactionUUID,
     const NodeUUID &destination,
     const TrustLineAmount &amount,
-    bool isContractorGateway)
+    bool isContractorGateway,
+    const string ethereumAddress)
     noexcept :
 
     SetIncomingTrustLineMessage(
@@ -14,7 +15,8 @@ SetIncomingTrustLineInitialMessage::SetIncomingTrustLineInitialMessage(
         sender,
         transactionUUID,
         destination,
-        amount),
+        amount,
+        ethereumAddress),
     mIsContractorGateway(isContractorGateway)
 {}
 

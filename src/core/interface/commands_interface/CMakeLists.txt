@@ -65,7 +65,7 @@ set(SOURCE_FILES
         commands/transactions/PaymentTransactionByCommandUUIDCommand.cpp
 
         commands/trust_lines_list/EquivalentListCommand.h
-        commands/trust_lines_list/EquivalentListCommand.cpp)
+        commands/trust_lines_list/EquivalentListCommand.cpp commands/trust_lines/EthereumAuditCommand.cpp commands/trust_lines/EthereumAuditCommand.h commands/trust_lines/EthereumCloseChannelCommand.cpp commands/trust_lines/EthereumCloseChannelCommand.h)
 
 add_library(interface__commands ${SOURCE_FILES})
 target_link_libraries(interface__commands

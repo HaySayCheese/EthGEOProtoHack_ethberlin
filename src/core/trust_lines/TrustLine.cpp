@@ -19,7 +19,12 @@ TrustLine::TrustLine(
     mCurrentAudit(auditNumber),
     mState(state),
     mTotalIncomingReceiptsAmount(kZeroAmount()),
-    mTotalOutgoingReceiptsAmount(kZeroAmount())
+    mTotalOutgoingReceiptsAmount(kZeroAmount()),
+    mContractorEthereumAddress(""),
+    mEthereumChannelId(""),
+    mIsAlice(false),
+    mCurrentEpochId(0),
+    mCurrentPaymentReceiptId(0)
 {
     // todo zero amounts checking
 }
@@ -39,7 +44,12 @@ TrustLine::TrustLine(
     mCurrentAudit(kInitialAuditNumber),
     mState(state),
     mTotalIncomingReceiptsAmount(kZeroAmount()),
-    mTotalOutgoingReceiptsAmount(kZeroAmount())
+    mTotalOutgoingReceiptsAmount(kZeroAmount()),
+    mContractorEthereumAddress(""),
+    mEthereumChannelId(""),
+    mIsAlice(false),
+    mCurrentEpochId(0),
+    mCurrentPaymentReceiptId(0)
 {}
 
 /**
@@ -139,6 +149,43 @@ void TrustLine::setAuditNumber(
     mCurrentAudit = newAuditNumber;
 }
 
+bool TrustLine::isStateChannel() const
+{
+    return !mContractorEthereumAddress.empty();
+}
+
+const string TrustLine::contractorEthereumAddress() const
+{
+    return mContractorEthereumAddress;
+}
+
+void TrustLine::setCotntractorEthereumAddress(
+    const string contractorEthereumAddress)
+{
+    mContractorEthereumAddress = contractorEthereumAddress;
+}
+
+const string TrustLine::ethereumChannelId() const
+{
+    return mEthereumChannelId;
+}
+
+void TrustLine::setEthereumChannelId(
+    const string ethereumChannelId)
+{
+    mEthereumChannelId = ethereumChannelId;
+}
+
+bool TrustLine::isAlice() const
+{
+    return mIsAlice;
+}
+
+void TrustLine::setAlice()
+{
+    mIsAlice = true;
+}
+
 /*!
  * Returns amount that is available to use on the trust line.
  */
@@ -226,6 +273,31 @@ void TrustLine::setContractorAsGateway(
     bool contractorAsGateway)
 {
     mIsContractorGateway = contractorAsGateway;
+}
+
+const uint64_t TrustLine::currentEpochId() const
+{
+    return mCurrentEpochId;
+}
+
+void TrustLine::incrementEpochId()
+{
+    mCurrentEpochId++;
+}
+
+const uint64_t TrustLine::currentPaymentReceiptId() const
+{
+    return mCurrentPaymentReceiptId;
+}
+
+void TrustLine::incrementPaymentReceiptId()
+{
+    mCurrentPaymentReceiptId++;
+}
+
+void TrustLine::resetPaymentReceiptId()
+{
+    mCurrentPaymentReceiptId = 0;
 }
 
 /*!

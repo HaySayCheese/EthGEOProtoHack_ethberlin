@@ -2,6 +2,7 @@
 
 AcceptTrustLineTransaction::AcceptTrustLineTransaction(
     const NodeUUID &nodeUUID,
+    const string &ethereumAddress,
     SetIncomingTrustLineInitialMessage::Shared message,
     TrustLinesManager *manager,
     StorageHandler *storageHandler,
@@ -25,7 +26,9 @@ AcceptTrustLineTransaction::AcceptTrustLineTransaction(
         logger),
     mSubsystemsController(subsystemsController),
     mIAmGateway(iAmGateway),
-    mSenderIsGateway(message->isContractorGateway())
+    mSenderIsGateway(message->isContractorGateway()),
+    mEthereumAddress(ethereumAddress),
+    mContractorEthereumAddress(message->ethereumAddress())
 {
     mAmount = message->amount();
     mAuditNumber = TrustLine::kInitialAuditNumber;
@@ -118,6 +121,12 @@ TransactionResult::SharedConst AcceptTrustLineTransaction::runInitializationStag
             ConfirmationMessage::ErrorShouldBeRemovedFromQueue);
     }
 
+    if (!mContractorEthereumAddress.empty() and mEthereumAddress.empty()) {
+        warning() << "Can't work with state channel";
+        return sendTrustLineErrorConfirmation(
+            ConfirmationMessage::ErrorShouldBeRemovedFromQueue);
+    }
+
     // Trust line must be created (or updated) in the internal storage.
     // Also, history record must be written about this operation.
     // Both writes must be done atomically, so the IO transaction is used.
@@ -156,6 +165,26 @@ TransactionResult::SharedConst AcceptTrustLineTransaction::runInitializationStag
             info() << "Incoming trust line was opened from gateway";
         }
 
+        if (!mContractorEthereumAddress.empty()) {
+            info() << "state channel mContractorEthereumAddress: " << mContractorEthereumAddress;
+            mTrustLines->setContractorEthereumAddress(
+                mContractorUUID,
+                mContractorEthereumAddress);
+
+            // todo [hackathon] create channel and depose on amount
+            // current ethereumAddress: mEthereumAddress
+            // contractorEthereumAddress: mContractorEthereumAddress
+            auto transactionIdAndChannelId = eth::api::createChannel(
+                mContractorEthereumAddress,
+                mAmount);
+
+            mEthereumChannelId = transactionIdAndChannelId.second;
+
+            mTrustLines->setEthereumChannelId(
+                mContractorUUID,
+                mEthereumChannelId);
+        }
+
         auto bytesAndCount = serializeToBytes();
         info() << "Transaction serialized";
         ioTransaction->transactionHandler()->saveRecord(
@@ -181,14 +210,27 @@ TransactionResult::SharedConst AcceptTrustLineTransaction::runInitializationStag
         throw e;
     }
 
-    sendMessageWithCaching<TrustLineConfirmationMessage>(
-        mContractorUUID,
-        Message::TrustLines_SetIncomingInitial,
-        mEquivalent,
-        mNodeUUID,
-        mTransactionUUID,
-        mIAmGateway,
-        ConfirmationMessage::OK);
+    if (!mContractorEthereumAddress.empty()) {
+        sendMessageWithCaching<TrustLineConfirmationMessage>(
+            mContractorUUID,
+            Message::TrustLines_SetIncomingInitial,
+            mEquivalent,
+            mNodeUUID,
+            mTransactionUUID,
+            mIAmGateway,
+            ConfirmationMessage::OK,
+            mEthereumAddress,
+            mEthereumChannelId);
+    } else {
+        sendMessageWithCaching<TrustLineConfirmationMessage>(
+            mContractorUUID,
+            Message::TrustLines_SetIncomingInitial,
+            mEquivalent,
+            mNodeUUID,
+            mTransactionUUID,
+            mIAmGateway,
+            ConfirmationMessage::OK);
+    }
 
     mStep = KeysSharingTargetNextKey;
     return resultWaitForMessageTypes(

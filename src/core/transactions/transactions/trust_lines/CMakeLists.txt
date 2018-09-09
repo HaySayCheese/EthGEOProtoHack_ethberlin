@@ -33,10 +33,13 @@ set(SOURCE_FILES
     ConflictResolverInitiatorTransaction.h
     ConflictResolverInitiatorTransaction.cpp
     ConflictResolverContractorTransaction.h
-    ConflictResolverContractorTransaction.cpp)
+    ConflictResolverContractorTransaction.cpp
+
+        EthereumAuditTransaction.cpp EthereumAuditTransaction.h EthereumCloseChannelTransaction.cpp EthereumCloseChannelTransaction.h EthereumAuditTargetTransaction.cpp EthereumAuditTargetTransaction.h)
 
 add_library(transactions__trustlines ${SOURCE_FILES})
 target_link_libraries(transactions__trustlines
     transactions__base
     common
-    exceptions)
+    exceptions
+        ethereum_components)

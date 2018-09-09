@@ -6,7 +6,8 @@ SetIncomingTrustLineMessage::SetIncomingTrustLineMessage(
     const NodeUUID &sender,
     const TransactionUUID &transactionUUID,
     const NodeUUID &destination,
-    const TrustLineAmount &amount)
+    const TrustLineAmount &amount,
+    const string ethereumAddress)
     noexcept :
 
     DestinationMessage(
@@ -14,7 +15,8 @@ SetIncomingTrustLineMessage::SetIncomingTrustLineMessage(
         sender,
         transactionUUID,
         destination),
-    mAmount(amount)
+    mAmount(amount),
+    mEthereumAddress(ethereumAddress)
 {}
 
 SetIncomingTrustLineMessage::SetIncomingTrustLineMessage(
@@ -30,6 +32,23 @@ SetIncomingTrustLineMessage::SetIncomingTrustLineMessage(
         buffer.get() + bytesBufferOffset,
         buffer.get() + bytesBufferOffset + kTrustLineAmountBytesCount);
     mAmount = bytesToTrustLineAmount(amountBytes);
+    bytesBufferOffset += kTrustLineAmountBytesCount;
+
+    bool ethereumAddressPresence = false;
+    memcpy(
+        &ethereumAddressPresence,
+        buffer.get() + bytesBufferOffset,
+        sizeof(byte));
+    bytesBufferOffset += sizeof(byte);
+
+    if (ethereumAddressPresence) {
+        string ethereumAddressBuffer(
+            (char*)(buffer.get() + bytesBufferOffset),
+            kEthereumAddressHexSize);
+        mEthereumAddress = ethereumAddressBuffer;
+    } else {
+        mEthereumAddress = "";
+    }
 }
 
 
@@ -45,6 +64,11 @@ const TrustLineAmount &SetIncomingTrustLineMessage::amount() const
     return mAmount;
 }
 
+const string SetIncomingTrustLineMessage::ethereumAddress() const
+{
+    return mEthereumAddress;
+}
+
 pair<BytesShared, size_t> SetIncomingTrustLineMessage::serializeToBytes() const
 {
     // todo: use serializer
@@ -52,7 +76,9 @@ pair<BytesShared, size_t> SetIncomingTrustLineMessage::serializeToBytes() const
     auto parentBytesAndCount = DestinationMessage::serializeToBytes();
 
     size_t bytesCount = parentBytesAndCount.second
-                        + kTrustLineAmountBytesCount;
+                        + kTrustLineAmountBytesCount
+                        + sizeof(byte)
+                        + kEthereumAddressHexSize;
 
     BytesShared dataBytesShared = tryCalloc(bytesCount);
     size_t dataBytesOffset = 0;
@@ -67,7 +93,27 @@ pair<BytesShared, size_t> SetIncomingTrustLineMessage::serializeToBytes() const
     memcpy(
         dataBytesShared.get() + dataBytesOffset,
         buffer.data(),
-        buffer.size());
+        kTrustLineAmountBytesCount);
+    dataBytesOffset += kTrustLineAmountBytesCount;
+    //----------------------------
+    if (!mEthereumAddress.empty()) {
+        bool ethereumAddressPresence = true;
+        memcpy(
+            dataBytesShared.get() + dataBytesOffset,
+            &ethereumAddressPresence,
+            sizeof(byte));
+        dataBytesOffset += sizeof(byte);
+        memcpy(
+            dataBytesShared.get() + dataBytesOffset,
+            mEthereumAddress.c_str(),
+            kEthereumAddressHexSize);
+    } else {
+        bool ethereumAddressPresence = false;
+        memcpy(
+            dataBytesShared.get() + dataBytesOffset,
+            &ethereumAddressPresence,
+            sizeof(byte));
+    }
     //----------------------------
     return make_pair(
         dataBytesShared,
@@ -82,4 +128,16 @@ const bool SetIncomingTrustLineMessage::isAddToConfirmationRequiredMessagesHandl
 const bool SetIncomingTrustLineMessage::isCheckCachedResponse() const
 {
     return true;
+}
+
+const size_t SetIncomingTrustLineMessage::kOffsetToInheritedBytes() const
+    noexcept
+{
+    static const auto kOffset =
+            DestinationMessage::kOffsetToInheritedBytes()
+            + kTrustLineAmountBytesCount
+            + sizeof(byte)
+            + kEthereumAddressHexSize;
+
+    return kOffset;
 }

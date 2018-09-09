@@ -6,6 +6,8 @@
 #include "../../../subsystems_controller/SubsystemsController.h"
 #include "../../../network/messages/trust_lines/SetIncomingTrustLineInitialMessage.h"
 
+#include "../../../ethereum/connector.h"
+
 class OpenTrustLineTransaction : public BaseTrustLineTransaction {
 
 public:
@@ -14,6 +16,7 @@ public:
 public:
     OpenTrustLineTransaction(
         const NodeUUID &nodeUUID,
+        const string &ethereumAddress,
         SetOutgoingTrustLineCommand::Shared command,
         TrustLinesManager *manager,
         StorageHandler *storageHandler,
@@ -61,6 +64,8 @@ private:
 
     TransactionResult::SharedConst runReceiveNextKeyStage();
 
+    TransactionResult::SharedConst runChannelOpeningPending();
+
     pair<BytesShared, size_t> serializeToBytes() const override;
 
 protected:
@@ -68,6 +73,7 @@ protected:
     TrustLineAmount mAmount;
     SubsystemsController *mSubsystemsController;
     bool mIAmGateway;
+    string mEthereumAddress;
 };
 
 

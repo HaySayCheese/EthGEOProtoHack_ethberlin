@@ -61,6 +61,12 @@ pair<bool, Message::Shared> MessagesParser::processBytesSequence(
         case Message::TrustLines_ConflictResolverConfirmation:
             return messageCollected<ConflictResolverResponseMessage>(buffer);
 
+        case Message::TrustLines_EthereumAudit:
+            return messageCollected<EthereumAuditMessage>(buffer);
+
+        case Message::TrustLines_EthereumAuditResponse:
+            return messageCollected<EthereumAuditResponseMessage>(buffer);
+
 
         /*
          * Payment operations messages
@@ -127,6 +133,9 @@ pair<bool, Message::Shared> MessagesParser::processBytesSequence(
 
         case Message::Payments_ParticipantVote:
             return messageCollected<ParticipantVoteMessage>(buffer);
+
+        case Message::Payments_EthereumReceipt:
+            return messageCollected<EthereumOutgoingReceiptMessage>(buffer);
 
 
         /*

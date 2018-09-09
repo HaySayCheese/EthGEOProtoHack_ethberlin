@@ -111,3 +111,18 @@ vector<SerializedEquivalent> Settings::iAmGateway(const json *conf) const {
         return result;
     }
 }
+
+const string Settings::ethereum(
+    const json *conf) const
+{
+    if (conf == nullptr) {
+        auto j = loadParsedJSON();
+        conf = &j;
+    }
+    try {
+        return (*conf).at("node").at("ethereum");
+    } catch (...) {
+        throw RuntimeError(
+                "Settings::ethereum: can't read node uuid.");
+    }
+}

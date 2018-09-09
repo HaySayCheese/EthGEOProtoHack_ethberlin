@@ -6,6 +6,7 @@
  */
 TransactionsManager::TransactionsManager(
     NodeUUID &nodeUUID,
+    string ethereumAddress,
     as::io_service &IOService,
     EquivalentsSubsystemsRouter *equivalentsSubsystemsRouter,
     ResourcesManager *resourcesManager,
@@ -17,6 +18,7 @@ TransactionsManager::TransactionsManager(
     TrustLinesInfluenceController *trustLinesInfluenceController) :
 
     mNodeUUID(nodeUUID),
+    mEthereumAddress(ethereumAddress),
     mIOService(IOService),
     mEquivalentsSubsystemsRouter(equivalentsSubsystemsRouter),
     mResourcesManager(resourcesManager),
@@ -499,6 +501,16 @@ void TransactionsManager::processCommand(
             static_pointer_cast<CloseIncomingTrustLineCommand>(
                 command));
 
+    } else if (command->identifier() == EthereumAuditCommand::identifier()) {
+        launchEthereumAuditTransaction(
+            static_pointer_cast<EthereumAuditCommand>(
+                 command));
+
+    } else if (command->identifier() == EthereumCloseChannelCommand::identifier()) {
+        launchEthereumCloseChannelTransaction(
+            static_pointer_cast<EthereumCloseChannelCommand>(
+                command));
+
     } else if (command->identifier() == CreditUsageCommand::identifier()) {
         launchCoordinatorPaymentTransaction(
             dynamic_pointer_cast<CreditUsageCommand>(
@@ -670,9 +682,13 @@ void TransactionsManager::processMessage(
             launchCycleCloserIntermediateNodeTransaction(
                 static_pointer_cast<IntermediateNodeCycleReservationRequestMessage>(message));
         }
-    } else if(message->typeID() == Message::MessageType::Payments_VotesStatusRequest){
+    } else if(message->typeID() == Message::MessageType::Payments_VotesStatusRequest) {
         launchVotesResponsePaymentsTransaction(
             static_pointer_cast<VotesStatusRequestMessage>(message));
+
+    } else if (message->typeID() == Message::Payments_EthereumReceipt) {
+        launchEthereumPaymentReceiptProcessingTransaction(
+            static_pointer_cast<EthereumOutgoingReceiptMessage>(message));
 
     /*
      * Cycles
@@ -777,6 +793,10 @@ void TransactionsManager::processMessage(
             }
         }
 
+    } else if (message->typeID() == Message::TrustLines_EthereumAudit) {
+        launchEthereumAuditTargetTransaction(
+            static_pointer_cast<EthereumAuditMessage>(message));
+
     /*
      * Gateway notification & RoutingTable
      */
@@ -812,6 +832,7 @@ void TransactionsManager::launchSetOutgoingTrustLineTransaction(
         mEquivalentsCyclesSubsystemsRouter->initNewEquivalent(command->equivalent());
         auto transaction = make_shared<OpenTrustLineTransaction>(
             mNodeUUID,
+            mEthereumAddress,
             command,
             mEquivalentsSubsystemsRouter->trustLinesManager(command->equivalent()),
             mStorageHandler,
@@ -833,8 +854,13 @@ void TransactionsManager::launchSetOutgoingTrustLineTransaction(
     try {
         auto trustLinesManager = mEquivalentsSubsystemsRouter->trustLinesManager(command->equivalent());
         if (trustLinesManager->trustLineIsPresent(command->contractorUUID())) {
+            if (trustLinesManager->outgoingTrustAmount(command->contractorUUID()) != TrustLine::kZeroAmount()) {
+                info() << "TrustLine alredy opened";
+                return;
+            }
             auto transaction = make_shared<SetOutgoingTrustLineTransaction>(
                 mNodeUUID,
+                mEthereumAddress,
                 command,
                 trustLinesManager,
                 mStorageHandler,
@@ -855,6 +881,7 @@ void TransactionsManager::launchSetOutgoingTrustLineTransaction(
         } else {
             auto transaction = make_shared<OpenTrustLineTransaction>(
                 mNodeUUID,
+                mEthereumAddress,
                 command,
                 mEquivalentsSubsystemsRouter->trustLinesManager(command->equivalent()),
                 mStorageHandler,
@@ -922,12 +949,75 @@ void TransactionsManager::launchCloseIncomingTrustLineTransaction(
     }
 }
 
+void TransactionsManager::launchEthereumAuditTransaction(
+    EthereumAuditCommand::Shared command)
+{
+    try {
+        auto transaction = make_shared<EthereumAuditTransaction>(
+            mNodeUUID,
+            mEthereumAddress,
+            command,
+            mEquivalentsSubsystemsRouter->trustLinesManager(command->equivalent()),
+            mLog);
+        subscribeForProcessingConfirmationMessage(
+            transaction->processConfirmationMessageSignal);
+        prepareAndSchedule(
+            transaction,
+            true,
+            true,
+            true);
+    } catch (NotFoundError &e) {
+        error() << "There are no subsystems for launchEthereumAuditTransaction "
+                   "with equivalent " << command->equivalent() << " Details are: " << e.what();
+        prepareAndSchedule(
+            make_shared<NoEquivalentTransaction>(
+                mNodeUUID,
+                command,
+                mLog),
+            false,
+            false,
+            false);
+    }
+}
+
+void TransactionsManager::launchEthereumCloseChannelTransaction(
+    EthereumCloseChannelCommand::Shared command)
+{
+    try {
+        auto transaction = make_shared<EthereumCloseChannelTransaction>(
+            mNodeUUID,
+            mEthereumAddress,
+            command,
+            mEquivalentsSubsystemsRouter->trustLinesManager(command->equivalent()),
+            mLog);
+        subscribeForProcessingConfirmationMessage(
+            transaction->processConfirmationMessageSignal);
+        prepareAndSchedule(
+            transaction,
+            true,
+            true,
+            true);
+    } catch (NotFoundError &e) {
+        error() << "There are no subsystems for launchEthereumCloseChannelTransaction "
+                   "with equivalent " << command->equivalent() << " Details are: " << e.what();
+        prepareAndSchedule(
+            make_shared<NoEquivalentTransaction>(
+                mNodeUUID,
+                command,
+                mLog),
+            false,
+            false,
+            false);
+    }
+}
+
 void TransactionsManager::launchSetIncomingTrustLineTransaction(
     SetIncomingTrustLineMessage::Shared message)
 {
     try {
         auto transaction = make_shared<SetIncomingTrustLineTransaction>(
             mNodeUUID,
+            mEthereumAddress,
             message,
             mEquivalentsSubsystemsRouter->trustLinesManager(message->equivalent()),
             mStorageHandler,
@@ -967,6 +1057,7 @@ void TransactionsManager::launchAcceptTrustLineTransaction(
     try {
         auto transaction = make_shared<AcceptTrustLineTransaction>(
             mNodeUUID,
+            mEthereumAddress,
             message,
             mEquivalentsSubsystemsRouter->trustLinesManager(message->equivalent()),
             mStorageHandler,
@@ -1084,6 +1175,27 @@ void TransactionsManager::launchConflictResolveContractorTransaction(
     } catch (NotFoundError &e) {
         error() << "There are no subsystems for ConflictResolverContractorTransaction "
                 "with equivalent " << message->equivalent() << " Details are: " << e.what();
+    }
+}
+
+void TransactionsManager::launchEthereumAuditTargetTransaction(
+    EthereumAuditMessage::Shared message)
+{
+    try {
+        auto transaction = make_shared<EthereumAuditTargetTransaction>(
+            mNodeUUID,
+            mEthereumAddress,
+            message,
+            mEquivalentsSubsystemsRouter->trustLinesManager(message->equivalent()),
+            mLog);
+        prepareAndSchedule(
+            transaction,
+            false,
+            false,
+            true);
+    } catch (NotFoundError &e) {
+        error() << "There are no subsystems for launchEthereumAuditTargetTransaction "
+                   "with equivalent " << message->equivalent() << " Details are: " << e.what();
     }
 }
 
@@ -1367,6 +1479,8 @@ void TransactionsManager::launchCoordinatorPaymentTransaction(
             transaction->mTrustLineAuditSignal);
         subscribeForPublicKeysSharingSignal(
             transaction->mPublicKeysSharingSignal);
+        subscribeForSendEthereumReceiptsSignal(
+            transaction->mEthereumOutgoingReceiptSignal);
         prepareAndSchedule(transaction, true, false, true);
     } catch (NotFoundError &e) {
         error() << "There are no subsystems for CoordinatorPaymentTransaction "
@@ -1436,6 +1550,8 @@ void TransactionsManager::launchIntermediateNodePaymentTransaction(
             transaction->mTrustLineAuditSignal);
         subscribeForPublicKeysSharingSignal(
             transaction->mPublicKeysSharingSignal);
+        subscribeForSendEthereumReceiptsSignal(
+            transaction->mEthereumOutgoingReceiptSignal);
         prepareAndSchedule(transaction, false, false, true);
     } catch (NotFoundError &e) {
         error() << "There are no subsystems for IntermediateNodePaymentTransaction "
@@ -1464,6 +1580,45 @@ void TransactionsManager::launchVotesResponsePaymentsTransaction(
                     message->transactionUUID()),
                 mLog),
             false,
+            false,
+            true);
+    } catch (ConflictError &e) {
+        throw ConflictError(e.message());
+    }
+}
+
+void TransactionsManager::launchEthereumPaymentReceiptProcessingTransaction(
+    EthereumOutgoingReceiptMessage::Shared message)
+{
+    try {
+        prepareAndSchedule(
+            make_shared<EthereumPaymentReceiptProcessingTransaction>(
+                mNodeUUID,
+                message,
+                mEquivalentsSubsystemsRouter->trustLinesManager(message->equivalent()),
+                mEquivalentsSubsystemsRouter->ethereumSiganturesManager(message->equivalent()),
+                mLog),
+            true,
+            false,
+            true);
+    } catch (ConflictError &e) {
+        throw ConflictError(e.message());
+    }
+}
+
+void TransactionsManager::launchEthereumSendPaymentReceiptsTransaction(
+    map<NodeUUID, TrustLineAmount> outgoingReceipts,
+    const SerializedEquivalent equivalent)
+{
+    try {
+        prepareAndSchedule(
+            make_shared<EthereumSendPaymentReceiptsTransaction>(
+                mNodeUUID,
+                equivalent,
+                outgoingReceipts,
+                mEquivalentsSubsystemsRouter->trustLinesManager(equivalent),
+                mLog),
+            true,
             false,
             true);
     } catch (ConflictError &e) {
@@ -2360,6 +2515,17 @@ void TransactionsManager::subscribeForPublicKeysSharingSignal(
     signal.connect(
         boost::bind(
             &TransactionsManager::onPublicKeySharingSlot,
+            this,
+            _1,
+            _2));
+}
+
+void TransactionsManager::subscribeForSendEthereumReceiptsSignal(
+    BasePaymentTransaction::EthereumOutgoingReceiptsSignal &signal)
+{
+    signal.connect(
+        boost::bind(
+            &TransactionsManager::launchEthereumSendPaymentReceiptsTransaction,
             this,
             _1,
             _2));

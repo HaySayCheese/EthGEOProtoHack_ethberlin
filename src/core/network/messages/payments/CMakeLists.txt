@@ -76,7 +76,7 @@ set(SOURCE_FILES
     ParticipantVoteMessage.cpp
 
     TransactionPublicKeyHashMessage.h
-    TransactionPublicKeyHashMessage.cpp)
+    TransactionPublicKeyHashMessage.cpp EthereumOutgoingReceiptMessage.cpp EthereumOutgoingReceiptMessage.h)
 
 add_library(messages__payments ${SOURCE_FILES})
 target_link_libraries(messages__payments

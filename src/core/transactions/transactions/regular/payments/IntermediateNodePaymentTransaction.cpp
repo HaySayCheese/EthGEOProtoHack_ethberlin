@@ -1176,6 +1176,9 @@ TransactionResult::SharedConst IntermediateNodePaymentTransaction::approve()
     BasePaymentTransaction::approve();
     BasePaymentTransaction::runThreeNodesCyclesTransactions();
     BasePaymentTransaction::runFourNodesCyclesTransactions();
+    mEthereumOutgoingReceiptSignal(
+        mOutgoingReceipts,
+        mEquivalent);
     return resultDone();
 }
 

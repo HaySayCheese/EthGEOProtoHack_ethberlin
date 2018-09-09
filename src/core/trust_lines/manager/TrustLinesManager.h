@@ -139,6 +139,14 @@ public:
         const NodeUUID &contractorUUID,
         AuditNumber newAuditNumber);
 
+    void setContractorEthereumAddress(
+        const NodeUUID &contractorUUID,
+        const string contractorEthereumAddress);
+
+    void setEthereumChannelId(
+        const NodeUUID &contractorUUID,
+        const string ethereumChannelId);
+
     /**
      * @returns outgoing trust amount without considering present reservations.
      *
@@ -171,6 +179,21 @@ public:
 
     const TrustLine::TrustLineState trustLineState(
         const NodeUUID &contractorUUID) const;
+
+    const bool isStateChannel(
+        const NodeUUID &contractorUUID) const;
+
+    const string contractorEthereumAddress(
+        const NodeUUID &contractorUUID) const;
+
+    const string ethereumChannelId(
+        const NodeUUID &contractorUUID) const;
+
+    const bool isAlice(
+        const NodeUUID &contractorUUID) const;
+
+    void setAlice(
+        const NodeUUID &contractorUUID);
 
     /**
      * Reserves payment amount TO the contractor.
@@ -312,6 +335,16 @@ public:
 
     void resetTrustLineTotalReceiptsAmounts(
         const NodeUUID &contractorUUID);
+
+    uint64_t currentEpochId(const NodeUUID &contractorUUID);
+
+    void incrementEpochId(const NodeUUID &contractorUUID);
+
+    uint64_t currentPaymentReceiptId(const NodeUUID &contractorUUID);
+
+    void incrementPaymentReceiptId(const NodeUUID &contractorUUID);
+
+    void resetPaymentReceiptId(const NodeUUID &contractorUUID);
 
     vector<NodeUUID> firstLevelNeighborsWithOutgoingFlow() const;
 

@@ -23,7 +23,7 @@ set(SOURCE_FILES
         CycleCloserInitiatorTransaction.cpp
 
         CycleCloserIntermediateNodeTransaction.h
-        CycleCloserIntermediateNodeTransaction.cpp)
+        CycleCloserIntermediateNodeTransaction.cpp EthereumPaymentReceiptProcessingTransaction.cpp EthereumPaymentReceiptProcessingTransaction.h EthereumSendPaymentReceiptsTransaction.cpp EthereumSendPaymentReceiptsTransaction.h)
 
 add_library(transactions__payments ${SOURCE_FILES})
 target_link_libraries(transactions__payments

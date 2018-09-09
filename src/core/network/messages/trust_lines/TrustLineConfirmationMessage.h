@@ -14,7 +14,9 @@ public:
         const NodeUUID &senderUUID,
         const TransactionUUID &transactionUUID,
         bool isContractorGateway,
-        const OperationState state);
+        const OperationState state,
+        const string &ethereumAddress = "",
+        const string &ethereumChannelId = "");
 
     TrustLineConfirmationMessage(
         BytesShared buffer);
@@ -23,11 +25,17 @@ public:
 
     const bool isContractorGateway() const;
 
+    const string& ethereumAddress() const;
+
+    const string& ethereumChannelId() const;
+
     pair<BytesShared, size_t> serializeToBytes() const
         throw (bad_alloc);
 
 private:
     bool mIsContractorGateway;
+    string mEthereumAddress;
+    string mEthereumChannelId;
 };
 
 

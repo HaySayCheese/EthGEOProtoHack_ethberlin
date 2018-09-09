@@ -66,6 +66,7 @@ protected:
         KeysSharingTargetNextKey = 9,
         Recovery = 10,
         AddToBlackList = 11,
+        ChannelOpeningPending = 12,
     };
 
 protected:
@@ -103,7 +104,7 @@ protected:
     pair<BytesShared, size_t> getContractorSerializedAuditData();
 
 protected:
-    static const uint32_t kWaitMillisecondsForResponse = 60000;
+    static const uint32_t kWaitMillisecondsForResponse = 300000;
 
 protected:
     TrustLinesManager *mTrustLines;

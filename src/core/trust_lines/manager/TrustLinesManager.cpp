@@ -292,6 +292,36 @@ void TrustLinesManager::setTrustLineAuditNumberAndMakeActive(
         trustLine);
 }
 
+void TrustLinesManager::setContractorEthereumAddress(
+    const NodeUUID &contractorUUID,
+    const string contractorEthereumAddress)
+{
+    if (not trustLineIsPresent(contractorUUID)) {
+        throw NotFoundError(
+            logHeader() + "::setContractorEthereumAddress: "
+                  "There is no trust line to contractor " + contractorUUID.stringUUID());
+    }
+
+    auto trustLine = mTrustLines[contractorUUID];
+    trustLine->setCotntractorEthereumAddress(
+        contractorEthereumAddress);
+}
+
+void TrustLinesManager::setEthereumChannelId(
+    const NodeUUID &contractorUUID,
+    const string ethereumChannelId)
+{
+    if (not trustLineIsPresent(contractorUUID)) {
+        throw NotFoundError(
+            logHeader() + "::setEthereumChannelId: "
+                   "There is no trust line to contractor " + contractorUUID.stringUUID());
+    }
+
+    auto trustLine = mTrustLines[contractorUUID];
+    trustLine->setEthereumChannelId(
+        ethereumChannelId);
+}
+
 const TrustLineAmount &TrustLinesManager::incomingTrustAmount(
     const NodeUUID &contractorUUID) const
 {
@@ -362,6 +392,67 @@ const TrustLine::TrustLineState TrustLinesManager::trustLineState(
     }
 
     return mTrustLines.at(contractorUUID)->state();
+}
+
+const bool TrustLinesManager::isStateChannel(
+    const NodeUUID &contractorUUID) const
+{
+    if (not trustLineIsPresent(contractorUUID)) {
+        throw NotFoundError(
+            logHeader() + "::isStateChannel: "
+                  "There is no trust line to contractor " + contractorUUID.stringUUID());
+    }
+
+    return mTrustLines.at(contractorUUID)->isStateChannel();
+}
+
+const string TrustLinesManager::contractorEthereumAddress(
+    const NodeUUID &contractorUUID) const
+{
+    if (not trustLineIsPresent(contractorUUID)) {
+        throw NotFoundError(
+            logHeader() + "::contractorEthereumAddress: "
+                  "There is no trust line to contractor " + contractorUUID.stringUUID());
+    }
+
+    return mTrustLines.at(contractorUUID)->contractorEthereumAddress();
+}
+
+const string TrustLinesManager::ethereumChannelId(
+    const NodeUUID &contractorUUID) const
+{
+    if (not trustLineIsPresent(contractorUUID)) {
+        throw NotFoundError(
+            logHeader() + "::ethereumChannelId: "
+                   "There is no trust line to contractor " + contractorUUID.stringUUID());
+    }
+
+    return mTrustLines.at(contractorUUID)->ethereumChannelId();
+}
+
+const bool TrustLinesManager::isAlice(
+    const NodeUUID &contractorUUID) const
+{
+    if (not trustLineIsPresent(contractorUUID)) {
+        throw NotFoundError(
+            logHeader() + "::isAlice: "
+                  "There is no trust line to contractor " + contractorUUID.stringUUID());
+    }
+
+    return mTrustLines.at(contractorUUID)->isAlice();
+}
+
+void TrustLinesManager::setAlice(
+    const NodeUUID &contractorUUID)
+{
+    if (not trustLineIsPresent(contractorUUID)) {
+        throw NotFoundError(
+            logHeader() + "::setAlice: "
+                  "There is no trust line to contractor " + contractorUUID.stringUUID());
+    }
+
+    auto trustLine = mTrustLines[contractorUUID];
+    trustLine->setAlice();
 }
 
 AmountReservation::ConstShared TrustLinesManager::reserveOutgoingAmount(
@@ -927,6 +1018,61 @@ ConstSharedTrustLineBalance TrustLinesManager::totalBalance() const
         result += trustLine.second->balance();
     }
     return make_shared<const TrustLineBalance>(result);
+}
+
+uint64_t TrustLinesManager::currentEpochId(const NodeUUID &contractorUUID)
+{
+    if (not trustLineIsPresent(contractorUUID)) {
+        throw NotFoundError(
+                logHeader() + "::currentEpochId: "
+                              "There is no trust line to the contractor.");
+    }
+    auto trustLine = mTrustLines[contractorUUID];
+    return trustLine->currentEpochId();
+}
+
+void TrustLinesManager::incrementEpochId(const NodeUUID &contractorUUID)
+{
+    if (not trustLineIsPresent(contractorUUID)) {
+        throw NotFoundError(
+                logHeader() + "::incrementEpochId: "
+                              "There is no trust line to the contractor.");
+    }
+    auto trustLine = mTrustLines[contractorUUID];
+    trustLine->incrementEpochId();
+}
+
+uint64_t TrustLinesManager::currentPaymentReceiptId(const NodeUUID &contractorUUID)
+{
+    if (not trustLineIsPresent(contractorUUID)) {
+        throw NotFoundError(
+                logHeader() + "::currentPaymentReceiptId: "
+                              "There is no trust line to the contractor.");
+    }
+    auto trustLine = mTrustLines[contractorUUID];
+    return trustLine->currentPaymentReceiptId();
+}
+
+void TrustLinesManager::incrementPaymentReceiptId(const NodeUUID &contractorUUID)
+{
+    if (not trustLineIsPresent(contractorUUID)) {
+        throw NotFoundError(
+                logHeader() + "::incrementPaymentReceiptId: "
+                              "There is no trust line to the contractor.");
+    }
+    auto trustLine = mTrustLines[contractorUUID];
+    trustLine->incrementPaymentReceiptId();
+}
+
+void TrustLinesManager::resetPaymentReceiptId(const NodeUUID &contractorUUID)
+{
+    if (not trustLineIsPresent(contractorUUID)) {
+        throw NotFoundError(
+                logHeader() + "::resetPaymentReceiptId: "
+                              "There is no trust line to the contractor.");
+    }
+    auto trustLine = mTrustLines[contractorUUID];
+    trustLine->resetPaymentReceiptId();
 }
 
 /**

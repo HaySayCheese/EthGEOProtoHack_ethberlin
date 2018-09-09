@@ -29,8 +29,8 @@ SetOutgoingTrustLineCommand::SetOutgoingTrustLineCommand(
     }
 
     size_t tokenSeparatorPos = command.find(
-            kTokensSeparator,
-            amountTokenOffset);
+        kTokensSeparator,
+        amountTokenOffset);
     try {
         mAmount = TrustLineAmount(
             command.substr(
@@ -44,15 +44,30 @@ SetOutgoingTrustLineCommand::SetOutgoingTrustLineCommand(
     }
 
     size_t equivalentOffset = tokenSeparatorPos + 1;
+    tokenSeparatorPos = command.find(
+        kTokensSeparator,
+        equivalentOffset);
     string equivalentStr = command.substr(
         equivalentOffset,
-        command.size() - equivalentOffset - 1);
+        tokenSeparatorPos - equivalentOffset);
     try {
         mEquivalent = (uint32_t)std::stoul(equivalentStr);
     } catch (...) {
         throw ValueError(
                 "SetTrustLineCommand: can't parse command. "
                     "Error occurred while parsing  'equivalent' token.");
+    }
+
+    size_t stateChannelOffset = tokenSeparatorPos + 1;
+    string stateChannelStr = command.substr(
+        stateChannelOffset,
+        command.size() - equivalentOffset - 1);
+    try {
+        mStateChannel = (bool)std::stoul(stateChannelStr);
+    } catch (...) {
+        throw ValueError(
+            "SetTrustLineCommand: can't parse command. "
+                "Error occurred while parsing  'stateChannel' token.");
     }
 }
 
@@ -79,4 +94,10 @@ const SerializedEquivalent SetOutgoingTrustLineCommand::equivalent() const
     noexcept
 {
     return mEquivalent;
+}
+
+const bool SetOutgoingTrustLineCommand::isStateChannel() const
+    noexcept
+{
+    return mStateChannel;
 }

@@ -54,4 +54,9 @@ typedef uint16_t ConfirmationID;
 //equivalents
 typedef uint32_t SerializedEquivalent;
 
+const size_t kEthereumAddressHexSize = 42;
+const size_t kEthereumChannelIdHexSize = 66;
+const size_t kEthereumSignatureHexSize = 130;
+typedef TrustLineAmount ChannelAmount;
+
 #endif //GEO_NETWORK_CLIENT_TYPES_H

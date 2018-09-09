@@ -34,6 +34,7 @@ public:
         Archived = 6,
         Conflict = 7,
         ConflictResolving = 8,
+        EthereumPending = 9,
     };
 
 public:
@@ -88,6 +89,32 @@ public:
     void setAuditNumber(
         AuditNumber newAuditNumber);
 
+    bool isStateChannel() const;
+
+    const string contractorEthereumAddress() const;
+
+    void setCotntractorEthereumAddress(
+        const string contractorEthereumAddress);
+
+    const string ethereumChannelId() const;
+
+    void setEthereumChannelId(
+        const string ethereumChannelId);
+
+    void setAlice();
+
+    bool isAlice() const;
+
+    const uint64_t currentEpochId() const;
+
+    void incrementEpochId();
+
+    const uint64_t currentPaymentReceiptId() const;
+
+    void incrementPaymentReceiptId();
+
+    void resetPaymentReceiptId();
+
     ConstSharedTrustLineAmount availableOutgoingAmount() const;
 
     ConstSharedTrustLineAmount availableIncomingAmount() const;
@@ -137,6 +164,11 @@ private:
     bool mIsContractorGateway;
     TrustLineState mState;
     AuditNumber mCurrentAudit;
+    string mContractorEthereumAddress;
+    string mEthereumChannelId;
+    bool mIsAlice;
+    uint64_t mCurrentEpochId;
+    uint64_t mCurrentPaymentReceiptId;
 };
 
 #endif //GEO_NETWORK_CLIENT_TRUSTLINE_H

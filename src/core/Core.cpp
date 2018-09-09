@@ -21,6 +21,8 @@ int Core::run()
     writePIDFile();
     updateProcessName();
 
+    info() << "EthereumAddress: " << mEthereumAddress;
+
     try {
         if (!mCommunicator->joinUUID2Address(mNodeUUID)) {
             error() << "Core can't be initialised. Process will now be stopped.";
@@ -76,6 +78,14 @@ int Core::initSubsystems()
         // Logger was not initialized yet
         cerr << utc_now() <<" : ERROR\tCORE\tCan't read if node is gateway from the settings" << endl;
         return -1;
+    }
+
+    try {
+        mEthereumAddress = mSettings->ethereum(&conf);
+
+    } catch (RuntimeError &) {
+        // Logger was not initialized yet
+        mEthereumAddress = "";
     }
 
     initCode = initLogger();
@@ -237,6 +247,7 @@ int Core::initTransactionsManager()
     try {
         mTransactionsManager = make_unique<TransactionsManager>(
             mNodeUUID,
+            mEthereumAddress,
             mIOService,
             mEquivalentsSubsystemsRouter.get(),
             mResourcesManager.get(),

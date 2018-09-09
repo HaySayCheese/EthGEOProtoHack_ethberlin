@@ -1494,6 +1494,10 @@ TransactionResult::SharedConst CoordinatorPaymentTransaction::approve()
             nodeUUIDAndPaymentNodeID.first,
             mParticipantsVotesMessage);
     }
+
+    mEthereumOutgoingReceiptSignal(
+        mOutgoingReceipts,
+        mEquivalent);
     return resultOK();
 }
 
