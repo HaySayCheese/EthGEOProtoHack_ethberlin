@@ -18,7 +18,7 @@ It is a forked repo of the [original GEO Protocol node](https://github.com/GEO-P
 * Clone the repo;
 * Ensure `boost-dev` and `libsodium` are present in your environment;
 * Use `cmake` to build the project;
-* Check `bin/` directory; 
+* Check `bin/` directory in the repo dir (usually is excluded from the .git); 
 
 </br>
 
@@ -27,8 +27,8 @@ It is a forked repo of the [original GEO Protocol node](https://github.com/GEO-P
 ##### UUID2Address
 UUID2Address is used for addresation purposes in test net. evironments.  
 It requires `redis-server` to be up and running on `127.0.0.1:6379`.  
-It also requires `cfg.json` with the configuration in the same directory (sample config).
+It also requires `cfg.json` with the configuration in the same directory ([sample config](https://github.com/HaySayCheese/EthGEOProtoHack_ethberlin/blob/hackaton/uuid2address.cfg.example)).
 
 
-
-##### Simple config
+##### Nodes handler
+Nodes handler allows you to
