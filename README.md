@@ -29,6 +29,13 @@ UUID2Address is used for addresation purposes in test net. evironments.
 It requires `redis-server` to be up and running on `127.0.0.1:6379`.  
 It also requires `cfg.json` with the configuration in the same directory ([sample config](https://github.com/HaySayCheese/EthGEOProtoHack_ethberlin/blob/hackaton/uuid2address.cfg.example)).
 
+##### Steps for node launching
+1. Ensure uuid2address is up and running
+2. Enshure node config is set up correctly and it is configured to use right uuid2address instance.
+3. Run the node somelike in this way `./geo_engine`
+4. Wait until it would be initialised properly
+5. Begin transfer commands to the node.
 
-##### Nodes handler
-Nodes handler allows you to
+
+##### Where are the commands located?
+Commands are located [here](https://github.com/HaySayCheese/EthGEOProtoHack_ethberlin/tree/hackaton/src/core/interface/commands_interface/commands) and must be transferred via `commands.fifo` file. Results must be read via `results.fifo` in the same dir. At one moment of time only one result might be present in the `results.fifo` so to prevent node blocking it must be read ASAP.
